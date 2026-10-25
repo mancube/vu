@@ -6,8 +6,10 @@
 
 #define VU_MAX_MONITORS 64
 
+struct backend_priv;
+
 typedef struct {
-    void *simple;      /* pa_simple* */
+    struct backend_priv *p; /* opaque Pulse context/stream state */
     int  channels;     /* native channel count of the source */
     int  frame_bytes;  /* all channels, one frame */
     int  ch_bytes;     /* one channel */
@@ -17,8 +19,8 @@ typedef struct {
 
 int  backend_open(backend_t *b, const char *device);
 void backend_close(backend_t *b);
-/* Monitor sources stream continuously (silence included), so reads
- * self-pace at ~max_frames/rate seconds. */
+/* Blocks until a chunk of audio (or an error) is available; monitor
+ * sources stream continuously (silence included), so this self-paces. */
 int  backend_read(backend_t *b, float *out, size_t max_frames);
 int  backend_list_monitors(char names[VU_MAX_MONITORS][128], int *count);
 int  backend_default_monitor(char names[VU_MAX_MONITORS][128], int *count, char *def, int defsz);
