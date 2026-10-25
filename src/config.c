@@ -4,11 +4,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Bar zone colors use the terminal's base-16 palette, which any 256-color
+ * terminal remaps to match its own scheme (dark or light). Scale and text
+ * use -1 (the terminal's default foreground) so they stay readable on any
+ * palette — hard-coded white/black text is invisible on half of them. */
 const theme_preset VU_PRESETS[] = {
-    { "default", { 2,   3,   1,   7,   15  } },
-    { "warm",    { 2,   3,   9,   8,   15  } },
-    { "mono",    { 250, 255, 196, 245, 255 } },
-    { "neon",    { 51,  190, 196, 240, 231 } },
+    { "default", { 2,   3,   1,   -1, -1  } },
+    { "warm",    { 3,   9,   1,   -1, -1  } },
+    { "mono",    { -1,  -1,  -1,  -1, -1  } },
+    { "neon",    { 51,  190, 196, -1,  -1  } },
 };
 const int VU_PRESET_COUNT = (int)(sizeof VU_PRESETS / sizeof VU_PRESETS[0]);
 
@@ -23,6 +27,7 @@ static const struct { const char *name; int num; } NAMED[] = {
 
 int theme_parse_color(const char *s)
 {
+    if (strcasecmp(s, "default") == 0) return -1; /* terminal default color */
     for (size_t i = 0; i < sizeof NAMED / sizeof NAMED[0]; i++)
         if (strcasecmp(s, NAMED[i].name) == 0) return NAMED[i].num;
     size_t len = strlen(s);
@@ -58,8 +63,8 @@ void config_defaults(config_t *c)
     c->bar_length = 40;
     c->db_min = -60;
     c->db_max = 0;
-    c->release_dbps = 30.0f;
-    c->hold_decay_dbps = 6.0f;
+    c->release_dbps = 60.0f;    /* bar falls 20 dB in ~0.3 s (standard PPM) */
+    c->hold_decay_dbps = 30.0f; /* peak marker clears ~1.7 s after silence */
     c->rms_window = 0.01f;
 }
 
@@ -135,7 +140,7 @@ int config_load_file(config_t *c, const char *path, char *err, int errsz)
                    !strcasecmp(key, "color_peak") || !strcasecmp(key, "color_scale") ||
                    !strcasecmp(key, "color_text")) {
             int color = theme_parse_color(val);
-            if (color < 0) {
+            if (color < 0 && strcasecmp(val, "default") != 0) {
                 snprintf(err, errsz, "%s:%d: bad color '%s'", path, lineno, val);
                 fclose(f);
                 return -1;

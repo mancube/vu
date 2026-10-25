@@ -146,9 +146,9 @@ int main(int argc, char **argv)
         }
         ui_draw(meters, &cfg, units_rel, paused, device, status);
 
-        /* poll keys for 20 ms; otherwise the next backend_read paces the loop
-         * at the device's chunk rate (~50 fps). Queued keys drain on later passes. */
-        timeout(20);
+        /* poll keys for 10 ms; otherwise the next backend_read paces the loop
+         * at the device's chunk rate. Queued keys drain on later passes. */
+        timeout(10);
         int key = getch();
         if (key == ERR) continue;
         if (key == 'q' || key == 'Q' || key == 27) goto done;

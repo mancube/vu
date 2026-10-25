@@ -10,6 +10,7 @@ int main(void)
     CHECK(theme_parse_color("green") == 2, "named color");
     CHECK(theme_parse_color("190") == 190, "integer color");
     CHECK(theme_parse_color("banana") == -1, "bad color");
+    CHECK(theme_parse_color("default") == -1, "default keyword");
     CHECK(theme_find_preset("neon") >= 0, "find preset");
     CHECK(theme_find_preset("nope") == -1, "unknown preset");
 
@@ -38,6 +39,14 @@ int main(void)
     CHECK(config_load_file(&c3, p, err, sizeof err) == 0, "load override ok");
     CHECK(c3.colors.peak == 196, "color override");
     CHECK(c3.preset_idx == -1, "override switches to custom");
+
+    f = fopen(p, "w");
+    fputs("color_scale = default\n", f);
+    fclose(f);
+    config_t c4;
+    config_defaults(&c4);
+    CHECK(config_load_file(&c4, p, err, sizeof err) == 0, "default keyword loads");
+    CHECK(c4.colors.scale == -1, "default keyword = -1");
 
     f = fopen(p, "w");
     fputs("bogus_key = 1\n", f);

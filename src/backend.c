@@ -157,9 +157,12 @@ int backend_open(backend_t *b, const char *device)
     pa_stream_set_state_callback(p->stream, on_stream_state, p);
     pa_buffer_attr ba;
     memset(&ba, 0, sizeof ba);
-    ba.tlength = (uint32_t)(0.2 * (double)ss.rate * (double)b->frame_bytes);
-    /* maxlength must be >0: with 0 the server trickles 1 frame per wire write
-     * (measured: 8B chunks); tlength==maxlength gives ~full-rate quanta. */
+    /* One wire quantum (~1024 frames): measured staleness ~= tlength/2, so a
+     * 200 ms buffer meant the meter showed 100+ ms-old audio. A quantum
+     * costs only ~10 ms and still delivers full-rate chunks.
+     * maxlength must be >0: with 0 this PipeWire 1.6.10 server trickles 1
+     * frame per wire write; tlength==maxlength gives ~full-rate quanta. */
+    ba.tlength = (uint32_t)(ss.rate / 48) * b->frame_bytes; /* ~1000 frames */
     ba.maxlength = ba.tlength;
     if (pa_stream_connect_record(p->stream, device, &ba, 0) < 0) {
         set_err(pa_strerror(pa_context_errno(p->ctx)));
